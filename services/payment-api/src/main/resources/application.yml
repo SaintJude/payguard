@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: payment-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payments
+    username: ${DB_USERNAME:${user.name}}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+payguard:
+  stream:
+    key: payments-stream

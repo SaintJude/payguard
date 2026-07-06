@@ -54,12 +54,12 @@ By the end of this project you should be able to:
 ### Services
 | Service | Responsibility | Language (suggested) |
 |---|---|---|
-| `payment-api` | Accepts payment requests, writes to DB, enqueues job | Go or Node |
-| `worker` | Pulls from queue, calls downstream, handles retry/idempotency | Same as API |
-| `mock-downstream` | Simulates a processor; chaos-injectable | Go or Node |
+| `payment-api` | Accepts payment requests, writes to DB, enqueues job | Java 21 / Spring Boot |
+| `worker` | Pulls from queue, calls downstream, handles retry/idempotency | Java 21 / Spring Boot |
+| `mock-downstream` | Simulates a processor; chaos-injectable | Java 21 / Spring Boot |
 | `chaos-injector` | Config-driven fault injection (latency, drops, 500s) | Sidecar or lib |
 | Postgres | Source of truth for payment state | — |
-| Redis or RabbitMQ | Queue between API and worker | — |
+| Redis Streams | Queue between API and worker | — |
 | Prometheus + Grafana | Metrics, dashboards, alerting | — |
 | OpenTelemetry Collector | Central trace/metric pipeline | — |
 

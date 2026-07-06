@@ -10,6 +10,13 @@ npm-debug.log*
 bin/
 *.exe
 
+# Java / Maven
+target/
+*.class
+
+# Local run artifacts (make start/verify)
+.run/
+
 # IDE
 .vscode/
 .idea/

@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: worker
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payments
+    username: ${DB_USERNAME:${user.name}}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      # payment-api owns the schema (via Flyway); this service only reads/writes
+      # rows, it never creates or alters tables. Start payment-api at least once
+      # before the worker so the payments table exists.
+      ddl-auto: none
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+payguard:
+  stream:
+    key: payments-stream
+    group: worker-group
+    consumer: worker-1

@@ -11,7 +11,7 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 ## Current phase
 
-> Update this line as you progress: **Phase 1 — Local app, no containers**
+> Update this line as you progress: **Phase 1 — Local app, no containers (complete)**
 
 ## Working agreements for Claude Code
 
@@ -33,10 +33,12 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 - Keep services minimal. This is a learning project, not a production
   system — avoid over-engineering (e.g. no need for a service mesh).
 
-## Tech choices (fill in once decided)
+## Tech choices
 
-- Language for services: _TBD_
-- Queue: _TBD (Redis Streams vs RabbitMQ)_
+- Language for services: Java 21 (LTS)
+- Framework: Spring Boot
+- Build tool: Maven
+- Queue: Redis Streams
 - Local Kubernetes: kind
 - CD tool: Argo CD (default) or Flux
 - Observability: Prometheus + Grafana + OpenTelemetry Collector
@@ -48,15 +50,48 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 docker compose up --build
 
 # Run tests
-# TBD once language/framework chosen
+mvn test
+
+# Run a service locally
+mvn spring-boot:run
 
 # Local k8s
 kind create cluster --name payguard
 kubectl apply -k infra/k8s/
 ```
 
+## Multi-agent workflow
+
+Work is divided across three custom subagents (`.claude/agents/architect.md`,
+`implementer.md`, `tester.md`) rather than done end-to-end in one long session,
+to keep each agent's context scoped and to avoid replaying prior chat history.
+
+For each phase or task:
+1. **architect** reads `PROJECT_PLAN.md`, this file, and the phase's
+   `docs/phase-notes/PHASE_N_TASKS.md`, and writes
+   `docs/architecture/PHASE_N_DESIGN.md` (concept primer, decision,
+   alternatives/tradeoffs, contracts). Never touches `services/` or `infra/`.
+2. The orchestrator presents that doc's Concept Primer + Tradeoffs to the user
+   as the required teaching checkpoint before any code is written.
+3. **implementer** builds code + unit tests strictly against that design doc.
+   If the doc doesn't cover something needed, it stops and adds a note under
+   the doc's Open Questions rather than improvising.
+4. **tester** builds/runs the system (direct process today, Docker Compose
+   from Phase 3, kind/Helm from Phase 5, `act` for CI from Phase 4) and writes
+   `docs/test-reports/PHASE_N_REPORT.md`. Never edits source.
+5. On FAIL, the orchestrator re-invokes **implementer** pointed only at the
+   report's "Failures Requiring Implementer Action" section — not a chat
+   replay. Loop until PASS.
+6. On PASS: orchestrator commits, updates this file's Current Phase line and
+   `PROJECT_PLAN.md`'s checkboxes, and proposes `PHASE_N_NOTES.md` for approval.
+
+Local pipeline entrypoint: `Makefile` (`make test`, `make verify`, etc. — see
+its comments for what each phase adds).
+
 ## Files Claude Code should always check before big changes
 
 - `PROJECT_PLAN.md` — overall roadmap and current phase definition of done
 - `docs/phase-notes/` — what's already been learned/decided, to avoid
   re-litigating settled choices
+- `docs/architecture/` — design docs per phase (architect agent output)
+- `docs/test-reports/` — verification results per phase (tester agent output)
