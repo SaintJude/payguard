@@ -1,15 +1,6 @@
 # OS
 .DS_Store
 
-# Node
-node_modules/
-npm-debug.log*
-.env
-
-# Go
-bin/
-*.exe
-
 # Java / Maven
 target/
 *.class
@@ -20,11 +11,16 @@ target/
 # IDE
 .vscode/
 .idea/
+*.iml
+out/
 
-# Docker
+# Env files (local secrets, Phase 3+ docker-compose)
+.env
+
+# Logs
 *.log
 
-# Terraform
+# Terraform (Phase 8)
 .terraform/
 *.tfstate
 *.tfstate.backup
