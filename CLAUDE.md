@@ -82,8 +82,13 @@ For each phase or task:
 5. On FAIL, the orchestrator re-invokes **implementer** pointed only at the
    report's "Failures Requiring Implementer Action" section — not a chat
    replay. Loop until PASS.
-6. On PASS: orchestrator commits, updates this file's Current Phase line and
-   `PROJECT_PLAN.md`'s checkboxes, and proposes `PHASE_N_NOTES.md` for approval.
+6. On PASS: **tester** additionally writes `docs/demos/PHASE_N_DEMO.md` — a
+   short, product-manager-facing script (exact start command, URL/curl/command
+   to run, what to observe) proving the phase's new capability, distinct from
+   the test report's job of proving correctness to a developer. The
+   orchestrator then commits, updates this file's Current Phase line and
+   `PROJECT_PLAN.md`'s checkboxes, and proposes `PHASE_N_NOTES.md` for
+   approval.
 
 Local pipeline entrypoint: `Makefile` (`make test`, `make verify`, etc. — see
 its comments for what each phase adds).
@@ -95,3 +100,5 @@ its comments for what each phase adds).
   re-litigating settled choices
 - `docs/architecture/` — design docs per phase (architect agent output)
 - `docs/test-reports/` — verification results per phase (tester agent output)
+- `docs/demos/` — PM-facing "how to see it working" scripts per phase (tester
+  agent output)

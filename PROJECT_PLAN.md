@@ -105,6 +105,10 @@ Each phase should end with:
 1. Working code, committed
 2. A short `PHASE_N_NOTES.md` capturing what you learned and any gotchas
 3. Updated root `README.md` reflecting current state of the system
+4. A short `docs/demos/PHASE_N_DEMO.md`: exact steps to see the phase's new
+   capability working (start command, URL/curl/command to run, what you
+   should observe) — written for a product-manager audience, not a developer
+   re-deriving the design
 
 ## 6. Repo Structure (target)
 
