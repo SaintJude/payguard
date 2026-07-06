@@ -17,8 +17,15 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 - Work one phase at a time, per `PROJECT_PLAN.md`. Do not jump ahead to
   containers/K8s/CI work until the current phase's Definition of Done is met.
-- Prefer small, reviewable commits with conventional commit messages
-  (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+- Prefer small, reviewable commits with conventional commit messages. This is
+  a required convention, not just an observed habit — every commit message
+  starts with one of:
+  - `feat:` — new capability (a new endpoint, a new service behavior)
+  - `fix:` — a bug fix to existing behavior
+  - `docs:` — documentation only (phase notes, design docs, README, this file)
+  - `test:` — tests only, no production code change
+  - `chore:` — everything else that isn't user-facing (tooling, CI config,
+    `.gitignore`, dependency bumps)
 - Before writing infrastructure code (Dockerfile, k8s manifests, Terraform,
   GitHub Actions), explain the concept briefly in plain language first, as
   if teaching it, then show the code. The user is learning these tools
