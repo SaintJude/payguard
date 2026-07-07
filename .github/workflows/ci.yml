@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [payment-api, worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Lint (Spotless)
+        run: mvn -B spotless:check -f services/${{ matrix.service }}/pom.xml
+
+      - name: Unit tests
+        run: mvn -B test -f services/${{ matrix.service }}/pom.xml
+
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [payment-api, worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t payguard/${{ matrix.service }}:ci ./services/${{ matrix.service }}

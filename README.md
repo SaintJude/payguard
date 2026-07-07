@@ -1,5 +1,7 @@
 # PayGuard
 
+[![CI](https://github.com/SaintJude/payguard/actions/workflows/ci.yml/badge.svg)](https://github.com/SaintJude/payguard/actions/workflows/ci.yml)
+
 A small, self-contained payment processing system with built-in chaos
 injection — a learning project for practicing containers, git, CI/CD,
 observability, and payment-resilience patterns (idempotency, retries,
