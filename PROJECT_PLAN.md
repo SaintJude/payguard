@@ -96,6 +96,16 @@ Wire in the chaos injector, OpenTelemetry tracing across all three services,
 and Prometheus/Grafana dashboards. Build one alert rule (e.g. error rate
 > 5% for 2 minutes) and one runbook doc describing what to do about it.
 
+**Requirement (added 2026-07-07):** an observability strategy covering
+system health/resource stats per service, transaction volume, and
+autoscaling behavior, using Prometheus and/or Grafana. Autoscaling
+specifically only becomes meaningful once Phase 5 puts services on
+Kubernetes (HPA needs a Deployment to scale) — until then this phase's
+dashboards cover request/transaction volume and per-service resource stats,
+with an autoscaling panel added once Phase 5 exists. This was raised while
+Phase 3 (containerize) was already complete; per this doc's phased,
+one-at-a-time approach, it's captured here rather than built early.
+
 ### Phase 8 (stretch) — Terraform for local infra
 Use Terraform's `docker` or `kind` providers to declaratively stand up the
 whole local environment instead of shell scripts.
