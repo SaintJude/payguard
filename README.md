@@ -10,35 +10,49 @@ the full roadmap and learning objectives.
 
 ## Status
 
-**Phase 4 — CI: complete.**
+**Phase 5 — Local Kubernetes: complete.**
 
-`payment-api`, `worker`, Postgres, and Redis all run as Docker containers,
-wired together with `docker-compose.yml` (Phase 3). Every PR and push to
-`main` now also runs a GitHub Actions pipeline — lint, unit tests, and a
-Docker build for both services — see the badge above and
-[`docs/demos/PHASE_4_DEMO.md`](docs/demos/PHASE_4_DEMO.md).
+`payment-api`, `worker`, Postgres, and Redis now run on a local `kind`
+Kubernetes cluster, as either plain manifests (`infra/k8s/`) or a Helm
+chart (`infra/helm/payguard/`) — in addition to the Docker Compose setup
+from Phase 3, which still works. See
+[`docs/demos/PHASE_5_DEMO.md`](docs/demos/PHASE_5_DEMO.md) for a
+walkthrough, including the self-healing behavior Compose doesn't give you.
 
 ## Running it
 
+**Docker Compose** (simplest, Phase 3):
 ```
 docker compose up --build   # build images + launch the whole stack
 docker compose down         # shut it down (payment data persists in a named volume)
 ```
 
-Then open **http://localhost:8080/** for a small test portal to submit
-payments and watch them resolve. See
-[`docs/demos/PHASE_3_DEMO.md`](docs/demos/PHASE_3_DEMO.md) for a walkthrough.
+**Local Kubernetes** (Phase 5 — see
+[`docs/demos/PHASE_5_DEMO.md`](docs/demos/PHASE_5_DEMO.md) for full steps):
+```
+kind create cluster --name payguard
+docker compose build payment-api worker
+kind load docker-image payguard-payment-api:latest --name payguard
+kind load docker-image payguard-worker:latest --name payguard
+kubectl apply -k infra/k8s/                                       # raw manifests
+# or: helm install payguard infra/helm/payguard -n payguard --create-namespace
+kubectl port-forward -n payguard svc/payment-api 8080:8080
+```
 
-Prefer running the services directly on the JVM instead (no Docker)?
-`make start` / `make stop` / `make verify` still work — see
+Either way, once running, open **http://localhost:8080/** for a small test
+portal to submit payments and watch them resolve.
+
+Prefer running the services directly on the JVM instead (no containers at
+all)? `make start` / `make stop` / `make verify` still work — see
 [`docs/demos/PHASE_1_DEMO.md`](docs/demos/PHASE_1_DEMO.md) and the
-[`run` skill](.claude/skills/run/SKILL.md) — just make sure Docker's
-containers and the direct-JVM processes aren't both holding ports
-8080/5432/6379 at the same time.
+[`run` skill](.claude/skills/run/SKILL.md) — just make sure only one of
+Compose/Kubernetes/direct-JVM is holding ports 8080/5432/6379 at a time.
 
 ## Repo layout
 
 - `services/payment-api/`, `services/worker/` — the two services built so far
+- `infra/k8s/` — raw Kubernetes manifests (Phase 5)
+- `infra/helm/payguard/` — Helm chart packaging the same system (Phase 5)
 - `docs/architecture/` — per-phase design docs (concept, decision, tradeoffs, contracts)
 - `docs/phase-notes/` — per-phase task checklists and retrospective notes
 - `docs/test-reports/` — per-phase verification results

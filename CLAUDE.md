@@ -11,7 +11,7 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 ## Current phase
 
-> Update this line as you progress: **Phase 4 — CI (complete)**
+> Update this line as you progress: **Phase 5 — Local Kubernetes (complete)**
 
 ## Working agreements for Claude Code
 
@@ -62,9 +62,13 @@ mvn test
 # Run a service locally
 mvn spring-boot:run
 
-# Local k8s
+# Local k8s (after `docker compose build` — images must be loaded into kind)
 kind create cluster --name payguard
+kind load docker-image payguard-payment-api:latest --name payguard
+kind load docker-image payguard-worker:latest --name payguard
 kubectl apply -k infra/k8s/
+# or, via Helm instead of raw manifests:
+helm install payguard infra/helm/payguard -n payguard --create-namespace
 ```
 
 ## Multi-agent workflow
