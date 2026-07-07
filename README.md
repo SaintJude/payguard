@@ -1,5 +1,7 @@
 # PayGuard
 
+[![CI](https://github.com/SaintJude/payguard/actions/workflows/ci.yml/badge.svg)](https://github.com/SaintJude/payguard/actions/workflows/ci.yml)
+
 A small, self-contained payment processing system with built-in chaos
 injection — a learning project for practicing containers, git, CI/CD,
 observability, and payment-resilience patterns (idempotency, retries,
@@ -8,13 +10,13 @@ the full roadmap and learning objectives.
 
 ## Status
 
-**Phase 3 — Containerize: complete.**
+**Phase 4 — CI: complete.**
 
 `payment-api`, `worker`, Postgres, and Redis all run as Docker containers,
-wired together with `docker-compose.yml`. A payment can be submitted, gets
-picked up by the worker, survives a simulated transient failure via retry,
-and resolves to `COMPLETED` — the same flow as Phase 1, now fully
-containerized with no local Postgres/Redis/JVM install required.
+wired together with `docker-compose.yml` (Phase 3). Every PR and push to
+`main` now also runs a GitHub Actions pipeline — lint, unit tests, and a
+Docker build for both services — see the badge above and
+[`docs/demos/PHASE_4_DEMO.md`](docs/demos/PHASE_4_DEMO.md).
 
 ## Running it
 
