@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payguard-config
+  namespace: payguard
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/payments"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  POSTGRES_DB: "payments"
