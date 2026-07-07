@@ -11,7 +11,7 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 ## Current phase
 
-> Update this line as you progress: **Phase 2 — Git discipline (complete)**
+> Update this line as you progress: **Phase 3 — Containerize (complete)**
 
 ## Working agreements for Claude Code
 
