@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: payguard
+      POSTGRES_PASSWORD: payguard
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payguard -d payments"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  payment-api:
+    build:
+      context: ./services/payment-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payments
+      DB_USERNAME: payguard
+      DB_PASSWORD: payguard
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+
+  worker:
+    build:
+      context: ./services/worker
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payments
+      DB_USERNAME: payguard
+      DB_PASSWORD: payguard
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      payment-api:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pg-data:

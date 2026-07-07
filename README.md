@@ -8,27 +8,31 @@ the full roadmap and learning objectives.
 
 ## Status
 
-**Phase 1 — Local app, no containers: complete.**
+**Phase 3 — Containerize: complete.**
 
-`payment-api` and `worker` run as direct JVM processes against local
-Homebrew Postgres and Redis. A payment can be submitted, gets picked up by
-the worker, survives a simulated transient failure via retry, and resolves
-to `COMPLETED`.
+`payment-api`, `worker`, Postgres, and Redis all run as Docker containers,
+wired together with `docker-compose.yml`. A payment can be submitted, gets
+picked up by the worker, survives a simulated transient failure via retry,
+and resolves to `COMPLETED` — the same flow as Phase 1, now fully
+containerized with no local Postgres/Redis/JVM install required.
 
 ## Running it
 
 ```
-make start   # build + launch both services in the background
-make stop    # shut them down
-make verify  # build, launch, run the automated verification scenarios, shut down
+docker compose up --build   # build images + launch the whole stack
+docker compose down         # shut it down (payment data persists in a named volume)
 ```
 
 Then open **http://localhost:8080/** for a small test portal to submit
 payments and watch them resolve. See
-[`docs/demos/PHASE_1_DEMO.md`](docs/demos/PHASE_1_DEMO.md) for a walkthrough,
-or the [`run` skill](.claude/skills/run/SKILL.md) for the full mechanics
-(including a JDK version gotcha worth knowing about before you run `mvn`
-directly).
+[`docs/demos/PHASE_3_DEMO.md`](docs/demos/PHASE_3_DEMO.md) for a walkthrough.
+
+Prefer running the services directly on the JVM instead (no Docker)?
+`make start` / `make stop` / `make verify` still work — see
+[`docs/demos/PHASE_1_DEMO.md`](docs/demos/PHASE_1_DEMO.md) and the
+[`run` skill](.claude/skills/run/SKILL.md) — just make sure Docker's
+containers and the direct-JVM processes aren't both holding ports
+8080/5432/6379 at the same time.
 
 ## Repo layout
 
