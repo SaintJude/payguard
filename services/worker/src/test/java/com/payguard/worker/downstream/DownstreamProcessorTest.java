@@ -14,7 +14,8 @@ class DownstreamProcessorTest {
     UUID paymentId = UUID.randomUUID();
 
     assertThatThrownBy(() -> processor.process(paymentId))
-        .isInstanceOf(TransientDownstreamException.class);
+        .isInstanceOf(IllegalStateException.class); // deliberately wrong — CI red-check test
+
   }
 
   @Test
