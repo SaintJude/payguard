@@ -11,7 +11,7 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 ## Current phase
 
-> Update this line as you progress: **Phase 5 — Local Kubernetes (complete)**
+> Update this line as you progress: **Phase 6 — GitOps CD (complete)**
 
 ## Working agreements for Claude Code
 
@@ -69,6 +69,11 @@ kind load docker-image payguard-worker:latest --name payguard
 kubectl apply -k infra/k8s/
 # or, via Helm instead of raw manifests:
 helm install payguard infra/helm/payguard -n payguard --create-namespace
+
+# GitOps (after the above; Argo CD then owns infra/k8s/ going forward —
+# don't kubectl apply/helm upgrade payguard's own resources by hand anymore)
+kubectl apply -f infra/argocd/application.yaml
+kubectl port-forward svc/argocd-server -n argocd 8080:443
 ```
 
 ## Multi-agent workflow
