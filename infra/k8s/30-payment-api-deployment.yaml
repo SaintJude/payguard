@@ -6,7 +6,7 @@ metadata:
   labels:
     app: payment-api
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: payment-api
@@ -78,10 +78,10 @@ spec:
                   key: OTEL_LOGS_EXPORTER
           resources:
             requests:
-              cpu: 100m
+              cpu: 40m
               memory: 256Mi
             limits:
-              cpu: 500m
+              cpu: 200m
               memory: 512Mi
           readinessProbe:
             httpGet:
