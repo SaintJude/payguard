@@ -17,62 +17,74 @@ solve). The architect should propose how to sequence/split implementation
 — this list is the full scope, not necessarily one implementer dispatch.
 
 ## Chaos injection
-- [ ] `mock-downstream` service — simulates the payment processor
-      `worker`'s `DownstreamProcessor` currently stubs in-process (Phase 1
-      design); design doc decides whether `worker` starts calling this over
-      the network instead, and what changes that implies
-- [ ] `chaos-injector` — config-driven fault injection (latency, drops,
-      5xxs) per `PROJECT_PLAN.md`'s architecture diagram
-- [ ] Both get Dockerfiles + k8s manifests (+ Helm chart entries) consistent
-      with Phase 3/5's existing patterns
+- [x] `mock-downstream` service — a boring, stateless, always-succeeds
+      simulated processor; the Phase 1 in-process stub is fully removed,
+      `worker` now makes a real HTTP call (through `chaos-injector`, see
+      below, never directly)
+- [x] `chaos-injector` — a standalone proxy service (not an in-process lib —
+      revised from the architect's first draft per explicit user direction)
+      sitting between `worker` and `mock-downstream`, with config-driven
+      fault injection (`NONE`/`LATENCY`/`ERROR_5XX`/`ERROR_4XX`/`DROP`) via
+      a live `GET`/`PUT /chaos/config` REST surface
+- [x] Both get Dockerfiles + k8s manifests + Helm chart entries + CI matrix
+      entries, consistent with Phase 3/4/5's existing patterns
 
 ## Observability
-- [ ] OpenTelemetry instrumentation across `payment-api`, `worker`, and the
-      new `mock-downstream` — traces at minimum; metrics if the design doc
-      recommends it over/alongside Prometheus's own scraping
-- [ ] OpenTelemetry Collector, deployed alongside the app
-- [ ] Prometheus deployed into the cluster, scraping all services
-- [ ] Grafana deployed, with dashboards covering: per-service resource
-      stats (CPU/memory — building on Phase 5's requests/limits), request
-      and transaction volume, and (new) live replica count / scaling events
-- [ ] One alert rule (e.g. error rate > 5% for 2 minutes) wired to fire
-      somewhere observable (Grafana alerting, Alertmanager — design doc
-      decides)
-- [ ] One runbook doc describing what to do when that alert fires
+- [x] OpenTelemetry instrumentation (Java agent, auto-instrumentation) across
+      all four services: `payment-api`, `worker`, `chaos-injector`,
+      `mock-downstream` — traces only, exported to a shared Collector
+- [x] OpenTelemetry Collector, deployed alongside the app in `payguard`,
+      exporting to Grafana Tempo
+- [x] Prometheus (`kube-prometheus-stack`) deployed into a new `monitoring`
+      namespace, scraping all four services via `PodMonitor`s
+- [x] Grafana deployed, with the "PayGuard Overview" dashboard: 11 panels
+      across Resources (per-pod CPU/memory), Traffic (request rate, p95
+      latency, transaction volume, failure rate), Chaos (chaos-injector vs.
+      mock-downstream request rates), and Scaling (HPA current/desired
+      replicas, actual replica count, CPU utilization vs. target)
+- [x] One alert rule (`PaymentFailureRateHigh`, failure ratio > 5% for 2
+      minutes) wired to Alertmanager — verified firing for real (see Manual
+      verification below)
+- [x] Runbook at `docs/runbooks/payment-failure-rate.md`
 
 ## Autoscaling
-- [ ] `metrics-server` installed into the kind cluster (not present by
-      default — required for any CPU/memory-based HPA to function at all)
-- [ ] `HorizontalPodAutoscaler` for `payment-api` (and/or `worker` — design
-      doc decides which, or both) with real min/max replicas and a target
-      utilization
-- [ ] **Resolve the Argo CD conflict**: `infra/k8s/*-deployment.yaml`
-      declares a fixed `replicas` count, and Phase 6's Application has
-      `selfHeal: true` — without a fix, Argo CD will revert every HPA-driven
-      scale-up right back down, the same behavior proven live in Phase 6's
-      own drift-correction demo. Design doc must specify the actual
-      mechanism (Argo CD's `spec.ignoreDifferences` on the replicas field is
-      the standard answer — confirm or propose an alternative) and update
-      `infra/argocd/application.yaml` and/or the HPA manifest accordingly.
-- [ ] A load-generation tool/script to actually drive enough volume against
-      `payment-api` to trigger a scale-up, and let it settle back down once
-      load stops
+- [x] `metrics-server` installed (imperative, with the kind-specific
+      `--kubelet-insecure-tls` patch) — `kubectl top` confirmed working
+- [x] `HorizontalPodAutoscaler` for both `payment-api` (min 2/max 4, 50%
+      CPU) and `worker` (min 2/max 3, 60% CPU)
+- [x] **Resolved the Argo CD conflict** via `spec.ignoreDifferences` on
+      `/spec/replicas`, scoped per-Deployment, added to
+      `infra/argocd/application.yaml` — see Manual verification for the
+      final live proof, which happens after this PR merges (Argo CD only
+      syncs from `main`; auto-sync was paused for the duration of this
+      phase's build-out to allow direct testing, see `PHASE_7_NOTES.md`)
+- [x] `k6` load-generation script at `load/payment-load.js` — verified: a
+      real ~6.5-minute run scaled `payment-api` 2→4 and `worker` 2→3, then
+      both settled back to `minReplicas: 2` after load stopped
 
 ## Manual verification
-- [ ] Chaos: trigger a configured fault via the chaos injector and confirm
-      it's visible in traces/metrics/logs, and that the system's existing
-      retry/resilience behavior (Phase 1) handles it as designed
-- [ ] Observability: Grafana dashboards show live, real data for all the
-      categories above; the alert rule actually fires under a forced
-      condition and the runbook's steps are accurate
-- [ ] Autoscaling: run the load-generation tool, watch replica count rise
-      on the Grafana dashboard (and `kubectl get hpa -w`) as load increases,
-      confirm the Argo CD Application stays `Synced`/`Healthy` throughout
-      (not fighting the HPA), then stop the load and watch it scale back
-      down
+- [x] Chaos: all five fault modes verified both in isolation and through
+      worker's full retry chain — `ERROR_5XX` resolves to `FAILED` after 3
+      retries (~0.73s), `ERROR_4XX` resolves to `FAILED` immediately with no
+      retry (~0.24s, resolving Phase 1's deferred permanent-vs-transient
+      question), visible in Tempo traces and the `payments_processed_total`
+      metric
+- [x] Observability: all 11 dashboard panels confirmed returning real,
+      non-empty data (checked directly against Prometheus's query API); the
+      alert rule confirmed firing for real under forced chaos (state
+      transitioned `inactive` → `pending` → `firing` after a sustained
+      2-minute window, reached Alertmanager, resolved after chaos was
+      turned off) — runbook's diagnostic commands verified accurate
+- [x] Autoscaling: the `k6` load test confirmed both HPAs scale up under
+      real CPU load and back down to `minReplicas` once load stops. The
+      "Argo CD stays Synced/Healthy throughout, not fighting the HPA" half
+      of this verification happens once this PR is merged (see Wave 6 in
+      `PHASE_7_NOTES.md` — auto-sync must be re-enabled from a `main` that
+      actually has the `ignoreDifferences` fix, or it would immediately
+      revert every other Phase 7 change too)
 
 ## Wrap-up
-- [ ] Write `docs/phase-notes/PHASE_7_NOTES.md`
-- [ ] Write `docs/demos/PHASE_7_DEMO.md`
-- [ ] Update root `README.md` and `CLAUDE.md`'s Current Phase line
-- [ ] Commit with message `feat: phase 7 — chaos, observability, autoscaling`
+- [x] Write `docs/phase-notes/PHASE_7_NOTES.md`
+- [x] Write `docs/demos/PHASE_7_DEMO.md`
+- [x] Update root `README.md` and `CLAUDE.md`'s Current Phase line
+- [x] Commit with message `feat: phase 7 — chaos, observability, autoscaling`
