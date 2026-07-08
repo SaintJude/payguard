@@ -20,7 +20,8 @@ spec:
           image: payguard-worker:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8081
+            - name: management
+              containerPort: 8081
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:

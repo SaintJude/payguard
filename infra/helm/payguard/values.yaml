@@ -50,6 +50,19 @@ chaosInjector:
       cpu: 500m
       memory: 512Mi
 
+otelCollector:
+  image:
+    repository: otel/opentelemetry-collector
+    tag: "0.111.0"
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+
 postgres:
   resources:
     requests:

@@ -1,0 +1,107 @@
+# infra/observability/kube-prometheus-stack-values.yaml
+#
+# Imperative Helm values for the `monitoring` namespace's observability
+# platform (kube-prometheus-stack). NOT Argo CD-tracked — installed by hand
+# per docs/architecture/PHASE_7_DESIGN.md Decision §4/§10.
+#
+# Trimmed to fit colima's 4 CPU / 6GiB budget with no resize this phase
+# (Decision §10 is the authoritative final resource table — these numbers
+# are the "further trimmed" ones, not the earlier Decision §4 draft's).
+#
+# Install:
+#   helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#     -n monitoring -f infra/observability/kube-prometheus-stack-values.yaml
+#
+# The release name MUST be `kube-prometheus-stack` — Decision §6's
+# PrometheusRule label convention (`release: kube-prometheus-stack`) and
+# Wave 5's alert rule depend on this exact release name.
+
+prometheus:
+  prometheusSpec:
+    # Watch PodMonitors in ALL namespaces, not just `monitoring` — payguard's
+    # PodMonitors (infra/k8s/73-76) live in the `payguard` namespace.
+    # NilUsesHelmValues must be false, or the chart ignores the empty
+    # selectors below and falls back to matching only PodMonitors labeled
+    # `release: kube-prometheus-stack` — a well-known sharp edge.
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector: {}
+    resources:
+      requests:
+        cpu: 50m
+        memory: 200Mi
+      limits:
+        cpu: 300m
+        memory: 400Mi
+    retention: 3h
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
+
+grafana:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      cpu: 150m
+      memory: 192Mi
+  sidecar:
+    dashboards:
+      enabled: true
+      # So the sidecar finds the "PayGuard Overview" dashboard ConfigMap
+      # living in the `payguard` namespace, not `monitoring`.
+      searchNamespace: ALL
+  # Prometheus is auto-registered as a datasource by this chart. Tempo is a
+  # separate Helm install (grafana/tempo, also in `monitoring`) that does not
+  # self-register with a separately-installed Grafana, so it's wired here.
+  additionalDataSources:
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      isDefault: false
+      jsonData:
+        httpMethod: GET
+
+# Disabled — see Decision §10: nothing in the "PayGuard Overview" dashboard
+# (Decision §5) queries node-exporter metrics; every per-pod CPU/memory
+# panel reads cAdvisor via kubelet instead. This chart ships node-exporter
+# as a DaemonSet regardless of pod count, making it pure overhead here.
+nodeExporter:
+  enabled: false
+
+# NOT a trim candidate despite being flagged as one in an earlier draft of
+# the design doc — kube-state-metrics is the sole source of the HPA
+# replica-count panels (Decision §5), this phase's single most important
+# new dashboard requirement. Kept, with trimmed resources.
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 256Mi
+
+# Skip the chart's large bundle of generic Kubernetes alert rules — this
+# phase wants exactly one, PayGuard-authored rule (Wave 5) to be legible,
+# not buried in 50 pre-built ones.
+defaultRules:
+  create: false

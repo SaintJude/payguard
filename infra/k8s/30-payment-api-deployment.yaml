@@ -21,7 +21,8 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
-            - containerPort: 8081
+            - name: management
+              containerPort: 8081
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:

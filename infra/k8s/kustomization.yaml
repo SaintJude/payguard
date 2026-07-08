@@ -17,3 +17,11 @@ resources:
   - 51-mock-downstream-service.yaml
   - 60-chaos-injector-deployment.yaml
   - 61-chaos-injector-service.yaml
+  - 70-otel-collector-configmap.yaml
+  - 71-otel-collector-deployment.yaml
+  - 72-otel-collector-service.yaml
+  - 73-podmonitor-payment-api.yaml
+  - 74-podmonitor-worker.yaml
+  - 75-podmonitor-mock-downstream.yaml
+  - 76-podmonitor-chaos-injector.yaml
+  - 77-grafana-dashboard-configmap.yaml
