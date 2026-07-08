@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: payguard-alerts
+  namespace: payguard
+  labels:
+    release: kube-prometheus-stack   # required — see the sharp-edge note below
+spec:
+  groups:
+    - name: payguard.rules
+      rules:
+        - alert: PaymentFailureRateHigh
+          expr: |
+            (sum(rate(payments_processed_total{status="FAILED"}[1m]))
+             /
+             sum(rate(payments_processed_total[1m]))) > 0.05
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Payment failure rate above 5% for 2 minutes"
+            description: "{{ "{{ $value | humanizePercentage }}" }} of payments are failing after retries exhausted. Check chaos-injector's chaos config and recent traces."
+            runbook_url: "https://github.com/SaintJude/payguard/blob/main/docs/runbooks/payment-failure-rate.md"

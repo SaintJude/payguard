@@ -27,3 +27,4 @@ resources:
   - 77-grafana-dashboard-configmap.yaml
   - 80-payment-api-hpa.yaml
   - 81-worker-hpa.yaml
+  - 90-payguard-alerts-prometheusrule.yaml
