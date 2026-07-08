@@ -60,8 +60,8 @@ grafana:
       cpu: 50m
       memory: 96Mi
     limits:
-      cpu: 150m
-      memory: 192Mi
+      cpu: 500m
+      memory: 512Mi
   sidecar:
     dashboards:
       enabled: true

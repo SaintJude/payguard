@@ -101,7 +101,9 @@ Compose/Kubernetes/direct-JVM is holding ports 8080/5432/6379 at a time.
   and Tempo, and the `metrics-server` kind patch — not Argo CD-tracked
   (Phase 7)
 - `load/` — the `k6` load-generation script (Phase 7)
-- `docs/architecture/` — per-phase design docs (concept, decision, tradeoffs, contracts)
+- `docs/architecture/` — per-phase design docs (concept, decision, tradeoffs,
+  contracts), plus [`SYSTEM_ARCHITECTURE.md`](docs/architecture/SYSTEM_ARCHITECTURE.md),
+  a current-state diagram of the whole system
 - `docs/phase-notes/` — per-phase task checklists and retrospective notes
 - `docs/test-reports/` — per-phase verification results
 - `docs/demos/` — per-phase "how to see it working" scripts
