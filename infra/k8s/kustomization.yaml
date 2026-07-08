@@ -25,3 +25,5 @@ resources:
   - 75-podmonitor-mock-downstream.yaml
   - 76-podmonitor-chaos-injector.yaml
   - 77-grafana-dashboard-configmap.yaml
+  - 80-payment-api-hpa.yaml
+  - 81-worker-hpa.yaml

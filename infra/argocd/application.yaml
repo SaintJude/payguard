@@ -12,6 +12,19 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: payguard
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: payment-api
+      namespace: payguard
+      jsonPointers:
+        - /spec/replicas
+    - group: apps
+      kind: Deployment
+      name: worker
+      namespace: payguard
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true
