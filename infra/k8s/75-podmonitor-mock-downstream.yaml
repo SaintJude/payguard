@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: mock-downstream
+  namespace: payguard
+  labels:
+    app: mock-downstream
+spec:
+  selector:
+    matchLabels:
+      app: mock-downstream
+  podMetricsEndpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: 15s
+      relabelings:
+        - targetLabel: job
+          replacement: mock-downstream

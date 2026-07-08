@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-downstream
+  namespace: payguard
+  labels:
+    app: mock-downstream
+spec:
+  replicas: {{ .Values.mockDownstream.replicaCount }}
+  selector:
+    matchLabels:
+      app: mock-downstream
+  template:
+    metadata:
+      labels:
+        app: mock-downstream
+    spec:
+      containers:
+        - name: mock-downstream
+          image: "{{ .Values.mockDownstream.image.repository }}:{{ .Values.mockDownstream.image.tag }}"
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+            - name: management
+              containerPort: 8081
+          env:
+            - name: OTEL_SERVICE_NAME
+              value: "mock-downstream"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_PROTOCOL
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_METRICS_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_LOGS_EXPORTER
+          resources:
+            requests:
+              cpu: {{ .Values.mockDownstream.resources.requests.cpu }}
+              memory: {{ .Values.mockDownstream.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.mockDownstream.resources.limits.cpu }}
+              memory: {{ .Values.mockDownstream.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6

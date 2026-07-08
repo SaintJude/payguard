@@ -1,0 +1,27 @@
+# infra/observability/metrics-server-kubelet-insecure-tls-patch.yaml
+#
+# JSON Patch (RFC 6902) adding `--kubelet-insecure-tls` to metrics-server's
+# container args. NOT Argo CD-tracked — metrics-server is installed
+# imperatively (like Argo CD's own bootstrap), per
+# docs/architecture/PHASE_7_DESIGN.md Decision §7.
+#
+# Why: kind's kubelet serving certs aren't signed in a way metrics-server
+# trusts by default. Without this patch every scrape fails with an x509
+# error and the HPA silently never gets data (`kubectl describe hpa` shows
+# `<unknown>` for current metrics forever). This is a near-universal kind
+# gotcha, not a PayGuard-specific decision.
+#
+# Install (in order):
+#   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+#   kubectl patch deployment metrics-server -n kube-system \
+#     --type='json' \
+#     --patch-file=infra/observability/metrics-server-kubelet-insecure-tls-patch.yaml
+#
+# Verify:
+#   kubectl top nodes
+#   kubectl top pods -n payguard
+# Both should return real numbers, not "error: Metrics API not available".
+
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --kubelet-insecure-tls

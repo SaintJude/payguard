@@ -106,6 +106,18 @@ with an autoscaling panel added once Phase 5 exists. This was raised while
 Phase 3 (containerize) was already complete; per this doc's phased,
 one-at-a-time approach, it's captured here rather than built early.
 
+**Requirement (added 2026-07-08):** the ability to performance/load test the
+system and visibly observe it scale up and down in response to volume — a
+`HorizontalPodAutoscaler` plus a load-generation tool, with the
+scaling event itself visible on the Grafana dashboards above (not just
+inferred from `kubectl get pods`). Phase 5 (Kubernetes) and Phase 6 (Argo
+CD GitOps, `selfHeal: true`) are both complete by the time this is being
+built, which introduces a real conflict this phase's design must resolve
+explicitly: an HPA mutates a Deployment's live `replicas` count outside of
+Git, and Argo CD's `selfHeal` is specifically designed to revert exactly
+that kind of drift back to whatever `infra/k8s/` declares (proven live in
+Phase 6's own demo). Wanted before Phase 8.
+
 ### Phase 8 (stretch) — Terraform for local infra
 Use Terraform's `docker` or `kind` providers to declaratively stand up the
 whole local environment instead of shell scripts.

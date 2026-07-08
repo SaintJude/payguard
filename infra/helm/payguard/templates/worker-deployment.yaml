@@ -19,6 +19,9 @@ spec:
         - name: worker
           image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
           imagePullPolicy: Never
+          ports:
+            - name: management
+              containerPort: 8081
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:
@@ -45,6 +48,38 @@ spec:
                 secretKeyRef:
                   name: payguard-secrets
                   key: DB_PASSWORD
+            - name: CHAOS_INJECTOR_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: CHAOS_INJECTOR_URL
+            - name: OTEL_SERVICE_NAME
+              value: "worker"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_PROTOCOL
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_METRICS_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_LOGS_EXPORTER
           resources:
             requests:
               cpu: {{ .Values.worker.resources.requests.cpu }}
@@ -52,3 +87,16 @@ spec:
             limits:
               cpu: {{ .Values.worker.resources.limits.cpu }}
               memory: {{ .Values.worker.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6

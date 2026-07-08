@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: payment-api
+  namespace: payguard
+  labels:
+    app: payment-api
+spec:
+  selector:
+    matchLabels:
+      app: payment-api
+  podMetricsEndpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: 15s
+      relabelings:
+        - targetLabel: job
+          replacement: payment-api

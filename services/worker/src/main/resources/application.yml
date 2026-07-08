@@ -1,3 +1,9 @@
+server:
+  # worker has no business HTTP surface -- this is its only port, serving the actuator
+  # endpoints below (no separate management.server.port needed, since there's no competing
+  # business port to keep it apart from).
+  port: 8081
+
 spring:
   application:
     name: worker
@@ -17,8 +23,16 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
 payguard:
   stream:
     key: payments-stream
     group: worker-group
     consumer: worker-1
+  chaos-injector:
+    url: ${CHAOS_INJECTOR_URL:http://localhost:8080}

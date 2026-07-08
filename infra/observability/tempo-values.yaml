@@ -1,0 +1,27 @@
+# infra/observability/tempo-values.yaml
+#
+# Imperative Helm values for Grafana Tempo (single-binary mode), installed
+# into the `monitoring` namespace alongside kube-prometheus-stack. NOT
+# Argo CD-tracked — see docs/architecture/PHASE_7_DESIGN.md Decision §3/§10.
+#
+# Install:
+#   helm install tempo grafana/tempo -n monitoring \
+#     -f infra/observability/tempo-values.yaml
+#
+# OTLP gRPC (4317) and HTTP (4318) receivers are enabled by this chart's own
+# defaults — no override needed. The OTel Collector (infra/k8s/70-72) sends
+# traces to http://tempo.monitoring.svc.cluster.local:4317.
+
+tempo:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Local disk (ephemeral) is sufficient for this project's trace volume, per
+# Decision §3 — no object-store/PVC backing needed for a laptop demo.
+persistence:
+  enabled: false

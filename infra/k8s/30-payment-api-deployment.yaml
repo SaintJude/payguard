@@ -6,7 +6,7 @@ metadata:
   labels:
     app: payment-api
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: payment-api
@@ -21,6 +21,8 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 8080
+            - name: management
+              containerPort: 8081
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:
@@ -47,6 +49,33 @@ spec:
                 secretKeyRef:
                   name: payguard-secrets
                   key: DB_PASSWORD
+            - name: OTEL_SERVICE_NAME
+              value: "payment-api"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_PROTOCOL
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_METRICS_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_LOGS_EXPORTER
           resources:
             requests:
               cpu: 100m

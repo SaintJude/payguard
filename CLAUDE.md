@@ -11,7 +11,7 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 
 ## Current phase
 
-> Update this line as you progress: **Phase 6 — GitOps CD (complete)**
+> Update this line as you progress: **Phase 7 — Chaos, Observability, Autoscaling (complete)**
 
 ## Working agreements for Claude Code
 
@@ -48,7 +48,13 @@ CI/CD, and cloud-native tooling. See `PROJECT_PLAN.md` for the full plan.
 - Queue: Redis Streams
 - Local Kubernetes: kind
 - CD tool: Argo CD (default) or Flux
-- Observability: Prometheus + Grafana + OpenTelemetry Collector
+- Observability: Prometheus + Grafana + OpenTelemetry Collector, plus
+  Grafana Tempo as the trace backend (added Phase 7 — traces need a
+  queryable store to be visualized in Grafana, not just grepped from
+  Collector logs)
+- Load testing: k6 (Phase 7) — required by `payment-api`'s
+  idempotency-key gating, which collapses fixed-payload tools into cache
+  hits instead of real load
 
 ## Useful commands (fill in as they're established)
 
@@ -74,6 +80,19 @@ helm install payguard infra/helm/payguard -n payguard --create-namespace
 # don't kubectl apply/helm upgrade payguard's own resources by hand anymore)
 kubectl apply -f infra/argocd/application.yaml
 kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# Observability platform (imperative, not Argo CD-tracked — install once)
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  -n monitoring -f infra/observability/kube-prometheus-stack-values.yaml
+helm install tempo grafana/tempo -n monitoring -f infra/observability/tempo-values.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type='json' \
+  --patch-file=infra/observability/metrics-server-kubelet-insecure-tls-patch.yaml
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+
+# Load test (drives real scale-up/down — see docs/demos/PHASE_7_DEMO.md)
+kubectl port-forward -n payguard svc/payment-api 8080:8080
+k6 run load/payment-load.js
 ```
 
 ## Multi-agent workflow
