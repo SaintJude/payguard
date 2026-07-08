@@ -2,7 +2,9 @@ package com.payguard.worker.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,8 +12,10 @@ import static org.mockito.Mockito.when;
 import com.payguard.worker.domain.Payment;
 import com.payguard.worker.domain.PaymentStatus;
 import com.payguard.worker.downstream.DownstreamProcessor;
+import com.payguard.worker.downstream.PermanentDownstreamException;
 import com.payguard.worker.downstream.TransientDownstreamException;
 import com.payguard.worker.repository.PaymentRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
@@ -29,6 +33,8 @@ class PaymentProcessingServiceTest {
 
   @Mock private DownstreamProcessor downstreamProcessor;
 
+  private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+
   private PaymentProcessingService service;
 
   private Payment newPendingPayment(UUID id) {
@@ -37,13 +43,13 @@ class PaymentProcessingServiceTest {
   }
 
   @Test
-  void successfulProcessingSetsStatusCompletedAndSaves() {
-    service = new PaymentProcessingService(paymentRepository, downstreamProcessor);
+  void successfulProcessingSetsStatusCompletedSavesAndIncrementsMetric() {
+    service = new PaymentProcessingService(paymentRepository, downstreamProcessor, meterRegistry);
     UUID paymentId = UUID.randomUUID();
     Payment payment = newPendingPayment(paymentId);
 
-    doNothing().when(downstreamProcessor).process(paymentId);
     when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+    doNothing().when(downstreamProcessor).process(eq(paymentId), any(BigDecimal.class));
 
     service.processPayment(paymentId);
 
@@ -51,24 +57,46 @@ class PaymentProcessingServiceTest {
     verify(paymentRepository).save(captor.capture());
     assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.COMPLETED);
     assertThat(captor.getValue().getUpdatedAt()).isNotNull();
+    assertThat(meterRegistry.counter("payments_processed_total", "status", "COMPLETED").count())
+        .isEqualTo(1.0);
   }
 
   @Test
-  void successfulProcessingWhenPaymentMissingLogsAndDoesNotSave() {
-    service = new PaymentProcessingService(paymentRepository, downstreamProcessor);
+  void whenPaymentMissingLogsSkipsDownstreamCallAndDoesNotSave() {
+    service = new PaymentProcessingService(paymentRepository, downstreamProcessor, meterRegistry);
     UUID paymentId = UUID.randomUUID();
 
-    doNothing().when(downstreamProcessor).process(paymentId);
     when(paymentRepository.findById(paymentId)).thenReturn(Optional.empty());
 
     service.processPayment(paymentId);
 
+    verify(downstreamProcessor, never()).process(any(), any());
     verify(paymentRepository, never()).save(any());
   }
 
   @Test
-  void recoverSetsStatusFailedAndSaves() {
-    service = new PaymentProcessingService(paymentRepository, downstreamProcessor);
+  void permanentDownstreamFailureSetsStatusFailedImmediatelyWithoutRetryingAndIncrementsMetric() {
+    service = new PaymentProcessingService(paymentRepository, downstreamProcessor, meterRegistry);
+    UUID paymentId = UUID.randomUUID();
+    Payment payment = newPendingPayment(paymentId);
+
+    when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
+    doThrow(new PermanentDownstreamException("chaos-injector returned 400"))
+        .when(downstreamProcessor)
+        .process(eq(paymentId), any(BigDecimal.class));
+
+    service.processPayment(paymentId);
+
+    ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+    verify(paymentRepository).save(captor.capture());
+    assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.FAILED);
+    assertThat(meterRegistry.counter("payments_processed_total", "status", "FAILED").count())
+        .isEqualTo(1.0);
+  }
+
+  @Test
+  void recoverSetsStatusFailedSavesAndIncrementsMetric() {
+    service = new PaymentProcessingService(paymentRepository, downstreamProcessor, meterRegistry);
     UUID paymentId = UUID.randomUUID();
     Payment payment = newPendingPayment(paymentId);
 
@@ -80,11 +108,13 @@ class PaymentProcessingServiceTest {
     verify(paymentRepository).save(captor.capture());
     assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.FAILED);
     assertThat(captor.getValue().getUpdatedAt()).isNotNull();
+    assertThat(meterRegistry.counter("payments_processed_total", "status", "FAILED").count())
+        .isEqualTo(1.0);
   }
 
   @Test
   void recoverWhenPaymentMissingLogsAndDoesNotSave() {
-    service = new PaymentProcessingService(paymentRepository, downstreamProcessor);
+    service = new PaymentProcessingService(paymentRepository, downstreamProcessor, meterRegistry);
     UUID paymentId = UUID.randomUUID();
 
     when(paymentRepository.findById(paymentId)).thenReturn(Optional.empty());

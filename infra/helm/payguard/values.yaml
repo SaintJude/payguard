@@ -24,6 +24,32 @@ worker:
       cpu: 500m
       memory: 512Mi
 
+mockDownstream:
+  image:
+    repository: payguard-mock-downstream
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+chaosInjector:
+  image:
+    repository: payguard-chaos-injector
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
 postgres:
   resources:
     requests:

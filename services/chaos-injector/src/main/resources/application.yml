@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chaos-injector
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+payguard:
+  mock-downstream:
+    url: ${MOCK_DOWNSTREAM_URL:http://localhost:8080}
+  chaos:
+    # Default chaos state on pod start. Chaos-off by default so a normal
+    # `kubectl apply`/Argo CD sync never silently starts injecting faults;
+    # live toggling during a demo goes through PUT /chaos/config instead.
+    default-mode: ${CHAOS_MODE:NONE}

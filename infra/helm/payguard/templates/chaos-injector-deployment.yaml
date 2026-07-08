@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaos-injector
+  namespace: payguard
+  labels:
+    app: chaos-injector
+spec:
+  replicas: {{ .Values.chaosInjector.replicaCount }}
+  selector:
+    matchLabels:
+      app: chaos-injector
+  template:
+    metadata:
+      labels:
+        app: chaos-injector
+    spec:
+      containers:
+        - name: chaos-injector
+          image: "{{ .Values.chaosInjector.image.repository }}:{{ .Values.chaosInjector.image.tag }}"
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+            - containerPort: 8081
+          env:
+            - name: MOCK_DOWNSTREAM_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: MOCK_DOWNSTREAM_URL
+            - name: OTEL_SERVICE_NAME
+              value: "chaos-injector"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_ENDPOINT
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_EXPORTER_OTLP_PROTOCOL
+            - name: OTEL_TRACES_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_TRACES_EXPORTER
+            - name: OTEL_METRICS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_METRICS_EXPORTER
+            - name: OTEL_LOGS_EXPORTER
+              valueFrom:
+                configMapKeyRef:
+                  name: payguard-config
+                  key: OTEL_LOGS_EXPORTER
+          resources:
+            requests:
+              cpu: {{ .Values.chaosInjector.resources.requests.cpu }}
+              memory: {{ .Values.chaosInjector.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.chaosInjector.resources.limits.cpu }}
+              memory: {{ .Values.chaosInjector.resources.limits.memory }}
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 6

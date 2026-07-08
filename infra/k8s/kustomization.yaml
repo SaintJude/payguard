@@ -13,3 +13,7 @@ resources:
   - 30-payment-api-deployment.yaml
   - 31-payment-api-service.yaml
   - 40-worker-deployment.yaml
+  - 50-mock-downstream-deployment.yaml
+  - 51-mock-downstream-service.yaml
+  - 60-chaos-injector-deployment.yaml
+  - 61-chaos-injector-service.yaml
