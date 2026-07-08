@@ -76,12 +76,17 @@ solve). The architect should propose how to sequence/split implementation
       2-minute window, reached Alertmanager, resolved after chaos was
       turned off) — runbook's diagnostic commands verified accurate
 - [x] Autoscaling: the `k6` load test confirmed both HPAs scale up under
-      real CPU load and back down to `minReplicas` once load stops. The
-      "Argo CD stays Synced/Healthy throughout, not fighting the HPA" half
-      of this verification happens once this PR is merged (see Wave 6 in
-      `PHASE_7_NOTES.md` — auto-sync must be re-enabled from a `main` that
-      actually has the `ignoreDifferences` fix, or it would immediately
-      revert every other Phase 7 change too)
+      real CPU load and back down to `minReplicas` once load stops.
+      **Post-merge**: re-enabled Argo CD's automated sync from `main`
+      (now containing the `ignoreDifferences` fix) — reached `Synced`/
+      `Healthy` immediately, no reversion. Manually scaled `payment-api`
+      to 3 replicas with `selfHeal: true` active; sync status stayed
+      `Synced` continuously throughout (never even briefly flipped to
+      `OutOfSync`, unlike Phase 6's own demo of the *unfixed* behavior) —
+      confirming Argo CD no longer treats `spec.replicas` as drift at all.
+      The eventual scale-down back to 2 was independently confirmed via
+      `kubectl describe hpa` as the HPA's own `SuccessfulRescale` event
+      ("All metrics below target"), not an Argo CD revert.
 
 ## Wrap-up
 - [x] Write `docs/phase-notes/PHASE_7_NOTES.md`
