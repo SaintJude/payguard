@@ -82,7 +82,7 @@ spec:
                   key: OTEL_LOGS_EXPORTER
           resources:
             requests:
-              cpu: 40m
+              cpu: 150m
               memory: 256Mi
             limits:
               cpu: 500m
