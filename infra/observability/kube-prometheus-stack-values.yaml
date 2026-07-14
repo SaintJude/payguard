@@ -31,8 +31,8 @@ prometheus:
         cpu: 50m
         memory: 200Mi
       limits:
-        cpu: 300m
-        memory: 400Mi
+        cpu: 1000m
+        memory: 900Mi
     retention: 3h
 
 prometheusOperator:
@@ -41,8 +41,8 @@ prometheusOperator:
       cpu: 50m
       memory: 64Mi
     limits:
-      cpu: 100m
-      memory: 128Mi
+      cpu: 300m
+      memory: 256Mi
 
 alertmanager:
   alertmanagerSpec:
@@ -51,8 +51,8 @@ alertmanager:
         cpu: 25m
         memory: 32Mi
       limits:
-        cpu: 50m
-        memory: 64Mi
+        cpu: 200m
+        memory: 128Mi
 
 grafana:
   resources:
@@ -97,8 +97,8 @@ kube-state-metrics:
       cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 100m
-      memory: 256Mi
+      cpu: 300m
+      memory: 400Mi
 
 # Skip the chart's large bundle of generic Kubernetes alert rules — this
 # phase wants exactly one, PayGuard-authored rule (Wave 5) to be legible,
