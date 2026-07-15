@@ -36,8 +36,12 @@ docker compose down         # shut it down (payment data persists in a named vol
 ```
 kind create cluster --name payguard
 docker compose build payment-api worker
+docker build -t payguard-chaos-injector:latest services/chaos-injector
+docker build -t payguard-mock-downstream:latest services/mock-downstream
 kind load docker-image payguard-payment-api:latest --name payguard
 kind load docker-image payguard-worker:latest --name payguard
+kind load docker-image payguard-chaos-injector:latest --name payguard
+kind load docker-image payguard-mock-downstream:latest --name payguard
 kubectl apply -k infra/k8s/                                       # raw manifests
 # or: helm install payguard infra/helm/payguard -n payguard --create-namespace
 kubectl port-forward -n payguard svc/payment-api 8080:8080

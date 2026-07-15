@@ -68,10 +68,17 @@ mvn test
 # Run a service locally
 mvn spring-boot:run
 
-# Local k8s (after `docker compose build` — images must be loaded into kind)
+# Local k8s (build all four service images, then load into kind — docker
+# compose only knows about payment-api/worker, chaos-injector and
+# mock-downstream need a plain `docker build`)
 kind create cluster --name payguard
+docker compose build payment-api worker
+docker build -t payguard-chaos-injector:latest services/chaos-injector
+docker build -t payguard-mock-downstream:latest services/mock-downstream
 kind load docker-image payguard-payment-api:latest --name payguard
 kind load docker-image payguard-worker:latest --name payguard
+kind load docker-image payguard-chaos-injector:latest --name payguard
+kind load docker-image payguard-mock-downstream:latest --name payguard
 kubectl apply -k infra/k8s/
 # or, via Helm instead of raw manifests:
 helm install payguard infra/helm/payguard -n payguard --create-namespace
