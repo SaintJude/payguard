@@ -11,8 +11,8 @@ export const options = {
       maxVUs: 200,
       stages: [
         { target: 5,  duration: '30s' },  // warm up
-        { target: 40, duration: '2m'  },  // ramp — should cross 50% CPU
-        { target: 40, duration: '3m'  },  // hold — watch HPA scale up
+        { target: 40, duration: '2m'  },  // ramp — watch the gradual 1-pod-per-45s climb to ceiling
+        { target: 40, duration: '90s' },  // hold — brief dwell at ceiling, short enough to avoid sustained-max-replica node strain
         { target: 0,  duration: '1m'  },  // ramp down — watch scale down
       ],
     },
